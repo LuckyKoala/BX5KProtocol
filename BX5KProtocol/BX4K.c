@@ -39,11 +39,11 @@ static const unsigned short tabel[256] = {
     0X8201, 0X42C0, 0X4380, 0X8341, 0X4100, 0X81C1, 0X8081, 0X4040
 };
 
-unsigned short calcCRC(const BYTE *data, long size) {
+unsigned short calcCRC(ByteArray arr) {
     long i;
     unsigned short crc = 0;
-    for (i = 0; i < size; i++) {
-      crc = CRC(crc, data[i]);
+    for (i = 0; i < arr.len; i++) {
+      crc = CRC(crc, arr.data[i]);
     }
     return crc;
 }
@@ -190,17 +190,18 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
       PROTOCOL_DEFAULT, //协议版本号 默认 0x02
       littleEndian(packageDataLen) //数据长度
     };
-    BX4KPackageForCRC packageForCRC = {
-      header, packageData
-    };
-    //CRC包校验
+    //合并包头和数据域，直接使用struct会因为packing产生多余的0
     int packageForCRCLen =LEN_PACKAGE_FOR_CRC_MIN+dataLength;
-    unsigned short crc = littleEndian(calcCRC(
-      (const BYTE *) &packageForCRC, packageForCRCLen));
+    BYTE *packageForCRCData = malloc(sizeof(BYTE) * packageForCRCLen);
+    memcpy(packageForCRCData, (BYTE *) &header, sizeof(BYTE) * LEN_PACKAGE_HEADER);
+    memcpy(packageForCRCData + LEN_PACKAGE_HEADER, (BYTE *) &packageData,
+           sizeof(BYTE) * LEN_PACKAGE_DATA_MIN+dataLength);
+    ByteArray packageForCRC = { packageForCRCLen, packageForCRCData };
+    //CRC包校验
+    unsigned short crc = littleEndian(calcCRC(packageForCRC));
     //合并PHY1层数据
-    int newLen = LEN_PACKAGE_HEADER + packageDataLen;
-    BYTE *phy1 = malloc(sizeof(BYTE) * newLen);
-    memcpy(phy1, (BYTE *) &packageForCRC, sizeof(BYTE) * packageForCRCLen);
+    int newLen = LEN_PACKAGE_HEADER + packageDataLen + LEN_CRC;
+    BYTE *phy1 = realloc(packageForCRCData, (sizeof(BYTE) * newLen));
     memcpy(phy1 + packageForCRCLen, (BYTE *) &crc, sizeof(BYTE) * 2);
     ByteArray arr = { newLen, phy1 };
     //转义PHY1层数据
@@ -231,11 +232,18 @@ void init() {
     }
 }
 
+/*
+ Example:
+  A5 A5 A5 A5 A5 A5 A5 A5
+  01 00 00 80 00 00 00 00
+  00 00 FE 02 05 00 A2 00
+  01 00 00 68 F8 5A
+ */
 ByteArray ping() {
     BX4KPackageData packageData = {
         0xA2, 0x00,
         CONTROLLER_MUST_RESPONSE,
-        {0x00, 0x00}
+        {0x00, 0x00} 
     };
     return genFrame(packageData, 0);
 }

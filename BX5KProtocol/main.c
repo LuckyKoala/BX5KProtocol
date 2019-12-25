@@ -13,6 +13,7 @@ int main(int argc, const char * argv[]) {
     init();
     ByteArray pingArr = ping();
     
+    printf("Ping Protocol:");
     int i;
     for (i = 0; i < pingArr.len; i++) {
         if (i%8 == 0) printf("\n");

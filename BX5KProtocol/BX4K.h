@@ -76,18 +76,14 @@ typedef struct {
 #define LEN_PACKAGE_HEADER 14
 #define LEN_PACKAGE_DATA_MIN 5
 #define LEN_PACKAGE_FOR_CRC_MIN 19
-
-typedef struct {
-    BX4KPackageHeader header;
-    BX4KPackageData data;
-} BX4KPackageForCRC;
+#define LEN_CRC 2
 
 typedef struct {
     int len;
-    BYTE *data;
+    const BYTE *data;
 } ByteArray;
 
-unsigned short calcCRC(const BYTE *data, long size);
+unsigned short calcCRC(ByteArray arr);
 ByteArray escape(ByteArray arr);
 ByteArray unescape(ByteArray arr);
 ByteArray genFrame(BX4KPackageData packageData, int dataLength);
