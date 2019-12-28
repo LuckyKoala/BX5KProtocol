@@ -25,6 +25,46 @@ typedef unsigned char BYTE;
 #define DEVICE_BX5MK2 0x53
 #define DEVICE_BX5MK1 0x54
 
+//ProcessMode
+#define PROCESS_MODE_APPEND 0x00
+#define PROCESS_MODE_OVERWRITE 0x01
+
+//RunMode
+#define RUN_MODE_CYCLE 0x00
+#define RUN_MODE_ITERATE_THEN_STAY_AT_LAST 0x01
+#define RUN_MODE_CYCLE_AND_TIMEOUT 0x02
+#define RUN_MODE_CYCLE_AND_TIMEOUT_TO_LAST 0x03
+#define RUN_MODE_ITERATE 0x04
+#define RUN_MODE_ITERATE_AND_TIMEOUT 0x05
+
+//TextAlignment
+#define TEXT_ALIGN_LEFT 0x00 //00 00
+#define TEXT_ALIGN_RIGHT 0x01 //00 01
+#define TEXT_ALIGN_HORIZONTAL_CENTER 0x02 //00 10
+#define TEXT_ALIGN_UP 0x00 //00 00
+#define TEXT_ALIGN_DOWN 0x04 //01 00
+#define TEXT_ALIGN_VERTICAL_CENTER 0x08 //10 00
+
+//SingleLine
+#define LINE_SINGLE 0x01
+#define LINE_MULTI 0x02
+
+//NewLine
+#define NEWLINE_MANUAL 0x01
+#define NEWLINE_AUTO 0x02
+
+//DisplayMode
+#define DISPLAY_MODE_STATIC 0x01
+#define DISPLAY_MODE_QUICK_TYPE 0x02
+#define DISPLAY_MODE_MOVE_LEFT 0x03
+#define DISPLAY_MODE_MOVE_RIGHT 0x04
+#define DISPLAY_MODE_MOVE_UP 0x05
+#define DISPLAY_MODE_MOVE_DOWN 0x06
+
+//DisplaySpeed
+#define DISPLAY_SPEED_FASTEST 0x00
+#define DISPLAY_SPEED_SLOWEST 0x18
+
 //CmdError
 #define ERR_NO 0x00 //No Error
 #define ERR_OUTOFGROUP 0x01 //Command Group Error
@@ -47,6 +87,17 @@ typedef unsigned char BYTE;
 //Response
 #define CONTROLLER_MUST_RESPONSE 0x01
 #define CONTROLLER_NO_RESPONSE 0x02
+
+//LengthConstant
+#define LEN_FRAME_START 8
+#define LEN_FRAME_END 1
+#define LEN_PACKAGE_HEADER 14
+#define LEN_PACKAGE_DATA_MIN 5
+#define LEN_PACKAGE_FOR_CRC_MIN 19
+#define LEN_CRC 2
+#define LEN_REALTIME_AREA_CONFIG_LEN 4
+#define LEN_REALTIME_AREA_DATA_MIN 31
+#define LEN_DISPLAY_DATA_LEN 4
 
 /*
 涉及到的多字节参数，均以先低字节(LSB)后高字节(MSB)顺序发送，但是对于文件名和
@@ -71,12 +122,29 @@ typedef struct {
     BYTE *data;
 } BX4KPackageData;
 
-#define LEN_FRAME_START 8
-#define LEN_FRAME_END 1
-#define LEN_PACKAGE_HEADER 14
-#define LEN_PACKAGE_DATA_MIN 5
-#define LEN_PACKAGE_FOR_CRC_MIN 19
-#define LEN_CRC 2
+//Not to use now due to struct padding will add 0x0000 in middle of struct
+//typedef struct {
+//    BYTE areaType;
+//    unsigned short areaX;
+//    unsigned short areaY;
+//    unsigned short areaWidth;
+//    unsigned short areaHeight;
+//    BYTE dynamicAreaLoc;
+//    BYTE linesSizes;
+//    BYTE runMode;
+//    unsigned short timeout;
+//    BYTE soundMode;
+//    BYTE extendParaLen;
+//    BYTE textAlignment;
+//    BYTE singleLine;
+//    BYTE newLine;
+//    BYTE displayMode;
+//    BYTE exitMode;
+//    BYTE speed;
+//    BYTE stayTime;
+//    unsigned int dataLen;
+//    const BYTE *data;
+//} AreaData;
 
 typedef struct {
     int len;
@@ -84,6 +152,7 @@ typedef struct {
 } ByteArray;
 
 unsigned short calcCRC(ByteArray arr);
+unsigned short littleEndian(unsigned short bits);
 ByteArray escape(ByteArray arr);
 ByteArray unescape(ByteArray arr);
 ByteArray genFrame(BX4KPackageData packageData, int dataLength);
@@ -91,6 +160,7 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength);
 void init(void);
 ByteArray ping(void);
 ByteArray queryStatus(void);
-//ByteArray display(char* message);
+ByteArray display(ByteArray arr);
+ByteArray clearScreen(void);
 
 #endif

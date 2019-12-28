@@ -49,11 +49,40 @@ unsigned short calcCRC(ByteArray arr) {
 }
 
 int isLittleEndian = 1;
+//Cached request constant
+#define EMPTY { 0, NULL }
+ByteArray PING_FRAME = EMPTY;
+ByteArray QUERY_STATUS_FRAME = EMPTY;
+ByteArray CLEAR_SCREEN_FRAME = EMPTY;
+
+void init() {
+    int i = 1;
+    char *p = (char *)&i;
+    if(*p == 1) {
+        isLittleEndian = 1;
+        //printf("Using Little Endian\n");
+    } else {
+        isLittleEndian = 0;
+        //printf("Using Big Endian\n");
+    }
+}
 
 //0x1234
 unsigned short littleEndian(unsigned short bits) {
     if(isLittleEndian != 1) {
         return (bits>>8) | (bits<<8);
+    } else {
+        return bits;
+    }
+}
+
+//0x12345678
+unsigned int littleEndianInt(unsigned int bits) {
+    if(isLittleEndian != 1) {
+        //return (bits>>8) | (bits<<8);
+        return (bits<<24) | (bits>>24)
+        || (bits & 0xff00) << 8
+        || (bits & 0xff0000) >> 8;
     } else {
         return bits;
     }
@@ -194,8 +223,10 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
     int packageForCRCLen =LEN_PACKAGE_FOR_CRC_MIN+dataLength;
     BYTE *packageForCRCData = malloc(sizeof(BYTE) * packageForCRCLen);
     memcpy(packageForCRCData, (BYTE *) &header, sizeof(BYTE) * LEN_PACKAGE_HEADER);
-    memcpy(packageForCRCData + LEN_PACKAGE_HEADER, (BYTE *) &packageData,
-           sizeof(BYTE) * LEN_PACKAGE_DATA_MIN+dataLength);
+    memcpy(packageForCRCData + LEN_PACKAGE_HEADER,
+           (BYTE *) &packageData, sizeof(BYTE) * LEN_PACKAGE_DATA_MIN);
+    memcpy(packageForCRCData + LEN_PACKAGE_HEADER + LEN_PACKAGE_DATA_MIN,
+           packageData.data, sizeof(BYTE) * dataLength);
     ByteArray packageForCRC = { packageForCRCLen, packageForCRCData };
     //CRC包校验
     unsigned short crc = littleEndian(calcCRC(packageForCRC));
@@ -206,6 +237,7 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
     ByteArray arr = { newLen, phy1 };
     //转义PHY1层数据
     ByteArray escapedArr = escape(arr);
+    free((void *)arr.data);
     //增加帧头和帧尾
     int frameLen = newLen + LEN_FRAME_START + LEN_FRAME_END;
     BYTE *phy0 = malloc(sizeof(BYTE) * frameLen);
@@ -215,21 +247,10 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
     memcpy(phy0 + (sizeof(BYTE) * LEN_FRAME_START), escapedArr.data,
            sizeof(BYTE) * escapedArr.len);
     memcpy(phy0 + (sizeof(BYTE) * LEN_FRAME_START) + (sizeof(BYTE) * escapedArr.len), &frameEnd, sizeof(unsigned short));
+    free((void *) escapedArr.data);
     ByteArray frame = { frameLen, phy0 };
 
     return frame;
-}
-
-void init() {
-    int i = 1;
-    char *p = (char *)&i;
-    if(*p == 1) {
-        isLittleEndian = 1;
-        printf("Using Little Endian\n");
-    } else {
-        isLittleEndian = 0;
-        printf("Using Big Endian\n");
-    }
 }
 
 /*
@@ -240,23 +261,130 @@ void init() {
   01 00 00 68 F8 5A
  */
 ByteArray ping() {
-    BX4KPackageData packageData = {
-        0xA2, 0x00,
-        CONTROLLER_MUST_RESPONSE,
-        {0x00, 0x00} 
-    };
-    return genFrame(packageData, 0);
+    if (PING_FRAME.len == 0) {
+        BX4KPackageData packageData = {
+            0xA2, 0x00,
+            CONTROLLER_MUST_RESPONSE,
+            {0x00, 0x00}
+        };
+        PING_FRAME = genFrame(packageData, 0);
+    }
+    
+    return PING_FRAME;
 }
 
+/*
+ Example:
+  A5 A5 A5 A5 A5 A5 A5 A5
+  01 00 00 80 00 00 00 00
+  00 00 FE 02 05 00 A1 02
+  01 00 00 2D 40 5A
+ */
 ByteArray queryStatus() {
-  BX4KPackageData packageData = {
-      0xA1, 0x02,
-      CONTROLLER_MUST_RESPONSE,
-      {0x00, 0x00}
-  };
-  return genFrame(packageData, 0);
+    if(QUERY_STATUS_FRAME.len == 0) {
+        BX4KPackageData packageData = {
+            0xA1, 0x02,
+            CONTROLLER_MUST_RESPONSE,
+            {0x00, 0x00}
+        };
+        QUERY_STATUS_FRAME = genFrame(packageData, 0);
+    }
+    
+    return QUERY_STATUS_FRAME;
 }
 
-//ByteArray display(char* message) {
-//  //
-//}
+/*
+ Example:
+  A5 A5 A5 A5 A5 A5 A5 A5
+  01 00 00 80 00 00 00 00
+  00 00 FE 02 05 00 A3 10
+  01 00 00 51 F8 5A
+ */
+ByteArray clearScreen() {
+    if(CLEAR_SCREEN_FRAME.len == 0) {
+        BX4KPackageData packageData = {
+            0xA3, 0x10,
+            CONTROLLER_MUST_RESPONSE,
+            {0x00, 0x00}
+        };
+        CLEAR_SCREEN_FRAME = genFrame(packageData, 0);
+    }
+    
+    return CLEAR_SCREEN_FRAME;
+}
+
+/*
+ Example:
+  A5 A5 A5 A5 A5 A5 A5 A5             -- 帧头
+  01 00 00 80 00 00 00 00 00 00 FE 02 -- 设备信息及协议信息，基本固定
+  32 00                               -- 数据长度
+  A3 06                               -- 命令分组，序号 (发送实时显示区域数据)
+  01                                  -- 必须回复
+  2D                                  -- ProcessMode
+  00                                  -- 保留
+  00 01                               -- 不删除区域，更新一个区域
+  29 00                               -- 区域0 数据长度 0x29 => 41
+  00                                  -- 区域类型
+  00 00 00 00                         -- 区域XY坐标
+  18 00                               -- 区域宽度(8个像素点)  0x18*8 => 24*8 => 192
+  20 00                               -- 区域高度                    0x20*1 => 32
+  00                                  -- 动态区域编号
+  00 00                               -- 行间距0，动态区循环显示
+  02 00                               -- 动态区数据超时时间 2秒/次
+  00                                  -- 不使能语音
+  00 00                               -- 拓展位个数0，水平垂直居中
+  02 02                               -- 多行显示，自动换行
+  03 00 04 05                         -- 向左移动，默认退出，速度0x04，特技停留2.5秒
+  0E 00 00 00                         -- 数据长度 0x0E => 14
+  30 31 32 33 34 35                   -- 数据 => "012345"
+  51 52 53 54 54 56 27 42             -- 数据 => "QRSTTV’B"
+  A8 7D                               -- CRC16 校验值
+  5A                                  -- 帧尾
+ */
+ByteArray display(ByteArray arr) {
+    int newDataLen = LEN_REALTIME_AREA_DATA_MIN + arr.len;
+    BYTE areaData[] = {
+        0x00, //区域类型
+        0x00, 0x00, //区域 X 坐标，默认以字节(8 个像素点)为单位 高字节最高位为 1 时，表示以像素点为单位
+        0x00, 0x00, //区域 Y 坐标，以像素点为单位
+        0x18, 0x00, //区域宽度，默认以字节(8 个像素点)为单位 高字节最高位为 1 时，表示以像素点为单位
+        0x20, 0x00, //区域高度，以像素点为单位
+        0x00, //动态区域编号，从0开始递增 - 第一个动态区域
+        0x00, //行间距
+        RUN_MODE_CYCLE, //运行模式
+        0x02, 0x00, //动态区数据超时时间
+        0x00, //是否使能语音播放，仅 5K1Q-YY/6K-YY 有效
+        RESERVED_DEFAULT, //拓展位个数
+        TEXT_ALIGN_UP | TEXT_ALIGN_LEFT, //字体对齐方式
+        LINE_MULTI, //是否单行显示
+        NEWLINE_AUTO, //是否自动换行
+        DISPLAY_MODE_MOVE_LEFT, //显示方式
+        0x00, //退出方式
+        0x04, //显示速度
+        0x05, //显示特技停留时间，单位0.5秒 -- 停留0秒
+        //字符串长度
+        //0x00000000
+    };
+    
+    BYTE *realtimeDataField = malloc(newDataLen * sizeof(BYTE));
+    realtimeDataField[0] = 0x00; //删除区域个数 0
+    realtimeDataField[1] = 0x01; //更新区域个数 1
+    unsigned short areaDataLen = littleEndian(newDataLen - LEN_REALTIME_AREA_CONFIG_LEN);
+    memcpy(realtimeDataField + 2, &areaDataLen, sizeof(unsigned short)); //区域数据长度
+    memcpy(realtimeDataField + 4, areaData,
+           (LEN_REALTIME_AREA_DATA_MIN - LEN_DISPLAY_DATA_LEN - 4) * sizeof(BYTE)); //拷贝除了显示数据和对应长度的区域数据
+    unsigned int displayDataLen = littleEndianInt(arr.len);
+    memcpy(realtimeDataField + LEN_REALTIME_AREA_DATA_MIN - LEN_DISPLAY_DATA_LEN,
+           (BYTE *) &displayDataLen, sizeof(unsigned int)); //拷贝显示数据长度
+    memcpy(realtimeDataField + LEN_REALTIME_AREA_DATA_MIN, arr.data,
+           arr.len * sizeof(BYTE)); //拷贝显示数据
+
+    BX4KPackageData packageData = {
+        0xA3, 0x06,
+        CONTROLLER_MUST_RESPONSE,
+        //{PROCESS_MODE_OVERWRITE, 0x00},
+        {0x2D, 0x00},
+        realtimeDataField
+    };
+    return genFrame(packageData, newDataLen);
+}
