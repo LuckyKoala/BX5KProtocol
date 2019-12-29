@@ -1,7 +1,7 @@
-#import <stdio.h>
-#import <string.h>
-#import <stdlib.h>
-#import "BX4K.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "BX4K.h"
 
 #define CRC(crc,byte) (((crc) >> 8 ) ^ tabel[((crc) ^ (unsigned int) (byte)) & 0XFF])
 static const unsigned short tabel[256] = {
@@ -253,6 +253,20 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
     return frame;
 }
 
+ByteArray wrapText(ByteArray arr, BX5KFontConfig fontConfig) {
+    char fontConfigStr[LEN_FONT_CONFIG];
+    sprintf(fontConfigStr, "\F%c%c%c%c",
+            fontConfig.language, fontConfig.encoding,
+            fontConfig.fontFamily, fontConfig.fontSize);
+    
+    BYTE *data = malloc((arr.len + LEN_FONT_CONFIG) * sizeof(BYTE));
+    memcpy(data, fontConfigStr, LEN_FONT_CONFIG);
+    memcpy(data + LEN_FONT_CONFIG, arr.data, arr.len * sizeof(BYTE));
+    
+    ByteArray newArr = { arr.len + LEN_FONT_CONFIG, data };
+    return newArr;
+}
+
 /*
  Example:
   A5 A5 A5 A5 A5 A5 A5 A5
@@ -341,14 +355,19 @@ ByteArray clearScreen() {
   A8 7D                               -- CRC16 校验值
   5A                                  -- 帧尾
  */
-ByteArray display(ByteArray arr) {
+ByteArray display(ByteArray arr, BYTE areaCustomConfig[4]) {
+    if(NULL == areaCustomConfig) {
+        BYTE defaultAreaCustomConfig[] = { 0x18, 0x00, 0x20, 0x00 };
+        areaCustomConfig = defaultAreaCustomConfig;
+    }
+    
     int newDataLen = LEN_REALTIME_AREA_DATA_MIN + arr.len;
     BYTE areaData[] = {
         0x00, //区域类型
         0x00, 0x00, //区域 X 坐标，默认以字节(8 个像素点)为单位 高字节最高位为 1 时，表示以像素点为单位
         0x00, 0x00, //区域 Y 坐标，以像素点为单位
-        0x18, 0x00, //区域宽度，默认以字节(8 个像素点)为单位 高字节最高位为 1 时，表示以像素点为单位
-        0x20, 0x00, //区域高度，以像素点为单位
+        areaCustomConfig[0], areaCustomConfig[1], //区域宽度，默认以字节(8 个像素点)为单位 高字节最高位为 1 时，表示以像素点为单位
+        areaCustomConfig[2], areaCustomConfig[3], //区域高度，以像素点为单位
         0x00, //动态区域编号，从0开始递增 - 第一个动态区域
         0x00, //行间距
         RUN_MODE_CYCLE, //运行模式
@@ -386,5 +405,8 @@ ByteArray display(ByteArray arr) {
         {0x2D, 0x00},
         realtimeDataField
     };
-    return genFrame(packageData, newDataLen);
+    ByteArray ret = genFrame(packageData, newDataLen);
+    free(realtimeDataField);
+    
+    return ret;
 }

@@ -98,6 +98,7 @@ typedef unsigned char BYTE;
 #define LEN_REALTIME_AREA_CONFIG_LEN 4
 #define LEN_REALTIME_AREA_DATA_MIN 31
 #define LEN_DISPLAY_DATA_LEN 4
+#define LEN_FONT_CONFIG 6 // "\FO000"
 
 /*
 涉及到的多字节参数，均以先低字节(LSB)后高字节(MSB)顺序发送，但是对于文件名和
@@ -146,6 +147,28 @@ typedef struct {
 //    const BYTE *data;
 //} AreaData;
 
+#define LANGUAGE_CHINESE 'O'
+#define LANGUAGE_ENGLISH 'E'
+#define LANGUAGE_OTHER 'K'
+#define ENCODING_GB2312_ASCII 0x00
+#define ENCODING_GBK 0x01
+#define ENCODING_UNICODE 0x02
+#define FONT_SONG_TI 0x00 //宋体
+#define FONT_KAI_TI 0x01 //楷体
+#define FONT_HEI_TI 0x02 //黑体
+#define FONT_FANG_SONG 0x03 //仿宋
+#define FONT_MICROSOFT_RUAN_HEI 0x04 //微软雅黑
+#define FONT_SIZE_16 0x00
+#define FONT_SIZE_24 0x01
+#define FONT_SIZE_32 0x02
+
+typedef struct {
+    BYTE language;
+    BYTE encoding;
+    BYTE fontFamily;
+    BYTE fontSize;
+} BX5KFontConfig;
+
 typedef struct {
     int len;
     const BYTE *data;
@@ -156,11 +179,14 @@ unsigned short littleEndian(unsigned short bits);
 ByteArray escape(ByteArray arr);
 ByteArray unescape(ByteArray arr);
 ByteArray genFrame(BX4KPackageData packageData, int dataLength);
+ByteArray wrapText(ByteArray arr, BX5KFontConfig fontConfig);
 
 void init(void);
 ByteArray ping(void);
 ByteArray queryStatus(void);
-ByteArray display(ByteArray arr);
+ByteArray display(ByteArray, BYTE[4]);
 ByteArray clearScreen(void);
+
+int parseResponse(ByteArray);
 
 #endif

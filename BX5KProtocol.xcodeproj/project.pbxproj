@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		995963FB23B78EBE0059BF0F /* BXNKController.c in Sources */ = {isa = PBXBuildFile; fileRef = 995963FA23B78EBE0059BF0F /* BXNKController.c */; };
+		995963FF23B88DD70059BF0F /* PComm.c in Sources */ = {isa = PBXBuildFile; fileRef = 995963FE23B88DD70059BF0F /* PComm.c */; };
 		99A4428823B1A97E004209B1 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 99A4428723B1A97E004209B1 /* main.c */; };
 		99A4429523B1A9DE004209B1 /* BX4K.c in Sources */ = {isa = PBXBuildFile; fileRef = 99A4429023B1A9DE004209B1 /* BX4K.c */; };
 /* End PBXBuildFile section */
@@ -24,6 +26,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		995963F923B78EBE0059BF0F /* BXNKController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BXNKController.h; sourceTree = "<group>"; };
+		995963FA23B78EBE0059BF0F /* BXNKController.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BXNKController.c; sourceTree = "<group>"; };
+		995963FC23B86FF20059BF0F /* windows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = windows.h; sourceTree = "<group>"; };
+		995963FE23B88DD70059BF0F /* PComm.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PComm.c; sourceTree = "<group>"; };
 		99A4428423B1A97E004209B1 /* BX5KProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BX5KProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
 		99A4428723B1A97E004209B1 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		99A4428E23B1A9DD004209B1 /* BX4K.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BX4K.h; sourceTree = "<group>"; };
@@ -67,6 +73,10 @@
 				99A4429323B1A9DE004209B1 /* PComm.h */,
 				99A4429223B1A9DE004209B1 /* README.md */,
 				99A4428723B1A97E004209B1 /* main.c */,
+				995963F923B78EBE0059BF0F /* BXNKController.h */,
+				995963FA23B78EBE0059BF0F /* BXNKController.c */,
+				995963FC23B86FF20059BF0F /* windows.h */,
+				995963FE23B88DD70059BF0F /* PComm.c */,
 			);
 			path = BX5KProtocol;
 			sourceTree = "<group>";
@@ -128,7 +138,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				995963FF23B88DD70059BF0F /* PComm.c in Sources */,
 				99A4428823B1A97E004209B1 /* main.c in Sources */,
+				995963FB23B78EBE0059BF0F /* BXNKController.c in Sources */,
 				99A4429523B1A9DE004209B1 /* BX4K.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

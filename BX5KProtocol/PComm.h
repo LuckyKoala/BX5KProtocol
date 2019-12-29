@@ -23,8 +23,9 @@
 #ifndef PCommH
 #define PCommH
 
-#include <windows.h>
-#include <windowsx.h>
+//#include <windows.h>
+//#include <windowsx.h>
+#include "windows.h"
 
 #define B50			0x00
 #define B75			0x01
