@@ -30,6 +30,7 @@
 		995963FA23B78EBE0059BF0F /* BXNKController.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BXNKController.c; sourceTree = "<group>"; };
 		995963FC23B86FF20059BF0F /* windows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = windows.h; sourceTree = "<group>"; };
 		995963FE23B88DD70059BF0F /* PComm.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PComm.c; sourceTree = "<group>"; };
+		9959640023B899B00059BF0F /* output.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = output.png; sourceTree = "<group>"; };
 		99A4428423B1A97E004209B1 /* BX5KProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BX5KProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
 		99A4428723B1A97E004209B1 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		99A4428E23B1A9DD004209B1 /* BX4K.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BX4K.h; sourceTree = "<group>"; };
@@ -68,6 +69,7 @@
 		99A4428623B1A97E004209B1 /* BX5KProtocol */ = {
 			isa = PBXGroup;
 			children = (
+				9959640023B899B00059BF0F /* output.png */,
 				99A4429023B1A9DE004209B1 /* BX4K.c */,
 				99A4428E23B1A9DD004209B1 /* BX4K.h */,
 				99A4429323B1A9DE004209B1 /* PComm.h */,
