@@ -23,6 +23,8 @@
 
 ## 调用实例
 
+**中文默认使用 GB2312 编码，其他编码需要定制**
+
 ```
 //=== Generate display command ===
 BYTE chStr[] = "鄂AC3450超重";

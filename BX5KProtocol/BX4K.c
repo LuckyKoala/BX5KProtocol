@@ -255,15 +255,15 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
 
 ByteArray wrapText(ByteArray arr, BX5KFontConfig fontConfig) {
     char fontConfigStr[LEN_FONT_CONFIG];
-    sprintf(fontConfigStr, "\F%c%c%c%c",
+    sprintf(fontConfigStr, "\\F%c%c%c%c",
             fontConfig.language, fontConfig.encoding,
             fontConfig.fontFamily, fontConfig.fontSize);
     
     BYTE *data = malloc((arr.len + LEN_FONT_CONFIG) * sizeof(BYTE));
-    memcpy(data, fontConfigStr, LEN_FONT_CONFIG);
-    memcpy(data + LEN_FONT_CONFIG, arr.data, arr.len * sizeof(BYTE));
+    memcpy(data, fontConfigStr, LEN_FONT_CONFIG - 1);
+    memcpy(data + LEN_FONT_CONFIG - 1, arr.data, arr.len * sizeof(BYTE));
     
-    ByteArray newArr = { arr.len + LEN_FONT_CONFIG, data };
+    ByteArray newArr = { arr.len + LEN_FONT_CONFIG - 1, data };
     return newArr;
 }
 
@@ -374,10 +374,10 @@ ByteArray display(ByteArray arr, BYTE areaCustomConfig[4]) {
         0x02, 0x00, //动态区数据超时时间
         0x00, //是否使能语音播放，仅 5K1Q-YY/6K-YY 有效
         RESERVED_DEFAULT, //拓展位个数
-        TEXT_ALIGN_UP | TEXT_ALIGN_LEFT, //字体对齐方式
+        TEXT_ALIGN_HORIZONTAL_CENTER | TEXT_ALIGN_VERTICAL_CENTER, //字体对齐方式
         LINE_MULTI, //是否单行显示
-        NEWLINE_AUTO, //是否自动换行
-        DISPLAY_MODE_MOVE_LEFT, //显示方式
+        NEWLINE_MANUAL, //是否自动换行
+        DISPLAY_MODE_STATIC, //显示方式
         0x00, //退出方式
         0x04, //显示速度
         0x05, //显示特技停留时间，单位0.5秒 -- 停留0秒

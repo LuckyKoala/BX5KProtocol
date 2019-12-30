@@ -72,30 +72,34 @@ int main(int argc, const char * argv[]) {
     }
     
     //=== Generate display command ===
-    BYTE chStr[] = "鄂AC3450超重";
-    ByteArray ch = {
-        (sizeof(chStr) / sizeof(BYTE)) - 1, //减去 \0
-        chStr
+    BYTE chStr[] = {
+        0xB6, 0xF5, 'A', 'C', 'D', '3', '4', '5', 0xB3, 0xAC, 0xD6, 0xD8 //GB2312编码： 鄂ACD345超重
+        //'\\', 'n', //换行
+        //0xB6, 0xF5, 0x42, 0x44, 0x43, 0x35, 0x33, 0x34, 0xB3, 0xAC, 0xD6, 0xD8
     };
-    //中文编码配置
-    BX5KFontConfig fontConfig = {
-        LANGUAGE_CHINESE, //中文
-        ENCODING_UNICODE, //Unicode 编码
-        FONT_SONG_TI,     //宋体
-        FONT_SIZE_16      //字体大小16（最小）
+    ByteArray ch = {
+        sizeof(chStr) / sizeof(BYTE),
+        chStr
     };
     //区域长宽配置
     BYTE areaCustomConfig[4] = {
         0x28, 0x00, //宽度 单位8像素点 小端法 0x0028 = (2*16+8*1)*8 = 320
         0xA0, 0x00, //高度 单位1像素点 小端法 0x00A0 = (10*16+0*1)*1 = 160
     };
-    ByteArray displayCommand = display(wrapText(ch, fontConfig), areaCustomConfig);
-    //printForDebug("协议内容(鄂AC3450超重)", displayCommand);
+    ByteArray displayCommand = display(ch, areaCustomConfig);
     
     //=== Send command through serial port ===
-    ret = sendCommand(port, displayCommand);
+    ret = sendCommand(port, clearScreen()); //清空屏幕
     
     //For test
+    if(ret >= 0) {
+        printf("ClearScreen success, data length: %d\n", ret);
+    } else {
+        printf("ClearScreen error: %d\n", ret);
+    }
+    
+    ret = sendCommand(port, displayCommand);
+    
     if(ret >= 0) {
         printf("SendCommand success, data length: %d\n", ret);
     } else {
