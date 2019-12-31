@@ -59,7 +59,7 @@ int main(int argc, const char * argv[]) {
     ByteArray arr = {
         sizeof(str) / sizeof(BYTE), str
     };
-    verifyAndPrint("Display", display(arr, NULL), littleEndian(0xA87D));
+    verifyAndPrint("Display", display(arr, NULL), littleEndian(0x5EB9));
     
     //============ Actual Usage ============
     

@@ -241,12 +241,14 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
     //增加帧头和帧尾
     int frameLen = newLen + LEN_FRAME_START + LEN_FRAME_END;
     BYTE *phy0 = malloc(sizeof(BYTE) * frameLen);
-    unsigned long frameStart = FRAME_START;
+    unsigned int frameStartHalf = FRAME_START_HALF;
     unsigned short frameEnd = FRAME_END;
-    memcpy(phy0, &frameStart, sizeof(BYTE) * LEN_FRAME_START);
-    memcpy(phy0 + (sizeof(BYTE) * LEN_FRAME_START), escapedArr.data,
+    memcpy(phy0, &frameStartHalf, sizeof(unsigned int)); //半个包头 4个A5
+    memcpy(phy0 + sizeof(unsigned int), &frameStartHalf, sizeof(unsigned int)); //半个包头 4个A5
+    size_t frameStartSize = sizeof(unsigned int) * 2;
+    memcpy(phy0 + frameStartSize, escapedArr.data,
            sizeof(BYTE) * escapedArr.len);
-    memcpy(phy0 + (sizeof(BYTE) * LEN_FRAME_START) + (sizeof(BYTE) * escapedArr.len), &frameEnd, sizeof(unsigned short));
+    memcpy(phy0 + frameStartSize + (sizeof(BYTE) * escapedArr.len), &frameEnd, sizeof(unsigned short));
     free((void *) escapedArr.data);
     ByteArray frame = { frameLen, phy0 };
 
