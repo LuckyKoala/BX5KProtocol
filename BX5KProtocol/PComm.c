@@ -22,12 +22,12 @@ int WINAPI sio_ioctl(int port, int baud, int mode) {
 }
 
 int WINAPI sio_write(int port, char *buf, int len) {
-    printf("sio_write to port %d, data: \n", port);
-    int i;
-    for(i = 0; i < len; i++) {
-        printf("%02X ", (unsigned char)buf[i]);
-    }
-    printf("\n");
+    printf("sio_write to port %d, len: %d\n", port, len);
+    //int i;
+    //for(i = 0; i < len; i++) {
+        //printf("%02X ", (unsigned char)buf[i]);
+    //}
+    //printf("\n");
     return len;
 }
 

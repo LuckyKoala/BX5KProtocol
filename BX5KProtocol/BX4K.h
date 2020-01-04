@@ -179,7 +179,7 @@ unsigned short littleEndian(unsigned short bits);
 ByteArray escape(ByteArray arr);
 ByteArray unescape(ByteArray arr);
 ByteArray genFrame(BX4KPackageData packageData, int dataLength);
-ByteArray wrapText(ByteArray arr, BX5KFontConfig fontConfig);
+//ByteArray wrapText(ByteArray arr, BX5KFontConfig fontConfig);
 
 void init(void);
 ByteArray ping(void);

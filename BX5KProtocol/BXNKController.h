@@ -15,7 +15,8 @@
 //初始化串口及配置
 int initialize(int port, int baud, int mode);
 //发送指令
-int sendCommand(int port, ByteArray cmd);
+int dynamicDisplay(int port, BYTE str[], int len);
+int clearDisplay(int port);
 //关闭串口
 int close(int port);
 

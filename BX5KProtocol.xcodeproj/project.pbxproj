@@ -11,6 +11,7 @@
 		995963FF23B88DD70059BF0F /* PComm.c in Sources */ = {isa = PBXBuildFile; fileRef = 995963FE23B88DD70059BF0F /* PComm.c */; };
 		99A4428823B1A97E004209B1 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 99A4428723B1A97E004209B1 /* main.c */; };
 		99A4429523B1A9DE004209B1 /* BX4K.c in Sources */ = {isa = PBXBuildFile; fileRef = 99A4429023B1A9DE004209B1 /* BX4K.c */; };
+		99D3596123C0441C0065A484 /* ReferenceCount.c in Sources */ = {isa = PBXBuildFile; fileRef = 99D3596023C0441C0065A484 /* ReferenceCount.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +38,8 @@
 		99A4429023B1A9DE004209B1 /* BX4K.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BX4K.c; sourceTree = "<group>"; };
 		99A4429223B1A9DE004209B1 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		99A4429323B1A9DE004209B1 /* PComm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PComm.h; sourceTree = "<group>"; };
+		99D3595F23C0441C0065A484 /* ReferenceCount.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ReferenceCount.h; sourceTree = "<group>"; };
+		99D3596023C0441C0065A484 /* ReferenceCount.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ReferenceCount.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +82,8 @@
 				995963FA23B78EBE0059BF0F /* BXNKController.c */,
 				995963FC23B86FF20059BF0F /* windows.h */,
 				995963FE23B88DD70059BF0F /* PComm.c */,
+				99D3595F23C0441C0065A484 /* ReferenceCount.h */,
+				99D3596023C0441C0065A484 /* ReferenceCount.c */,
 			);
 			path = BX5KProtocol;
 			sourceTree = "<group>";
@@ -140,6 +145,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				99D3596123C0441C0065A484 /* ReferenceCount.c in Sources */,
 				995963FF23B88DD70059BF0F /* PComm.c in Sources */,
 				99A4428823B1A97E004209B1 /* main.c in Sources */,
 				995963FB23B78EBE0059BF0F /* BXNKController.c in Sources */,

@@ -7,8 +7,8 @@
 //
 
 #include <stdio.h>
-#include "BX4K.h"
 #include "BXNKController.h"
+#include "ReferenceCount.h"
 
 void printForDebug(const char *name, ByteArray arr) {
     printf("%s: ", name);
@@ -43,11 +43,8 @@ void verifyAndPrint(const char *name, ByteArray arr, unsigned short crc) {
     printf("\n\n");
 }
 
-int main(int argc, const char * argv[]) {
-    //============ Test cases ============
-    
+void testProtocol() {
     printf("Verifing and printing BX5K protocols ... \n\n");
-    init();
     verifyAndPrint("Ping", ping(), littleEndian(0x68F8));
     verifyAndPrint("QueryStatus", queryStatus(), littleEndian(0x2D40));
     verifyAndPrint("ClearScreen", clearScreen(), littleEndian(0x51F8));
@@ -59,11 +56,19 @@ int main(int argc, const char * argv[]) {
     ByteArray arr = {
         sizeof(str) / sizeof(BYTE), str
     };
-    verifyAndPrint("Display", display(arr, NULL), littleEndian(0x5EB9));
+    ByteArray displayProtocol = display(arr, NULL);
+    verifyAndPrint("Display", displayProtocol, littleEndian(0x5EB9));
+    rc_free((void *) displayProtocol.data);
+    displayProtocol.data = NULL;
+}
+
+int main(int argc, const char * argv[]) {
+    //============ Test cases ============
+    testProtocol();
     
     //============ Actual Usage ============
     
-    //=== Initialize serial port ===
+    //=== 初始化 ===
     int port = 4;
     int ret = initialize(port, B57600, P_NONE | BIT_8 | STOP_1);
     if(ret != SIO_OK) {
@@ -71,34 +76,13 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
     
-    //=== Generate display command ===
+    //=== 展示字符串 ===
     BYTE chStr[] = {
         0xB6, 0xF5, 'A', 'C', 'D', '3', '4', '5', 0xB3, 0xAC, 0xD6, 0xD8 //GB2312编码： 鄂ACD345超重
         //'\\', 'n', //换行
         //0xB6, 0xF5, 0x42, 0x44, 0x43, 0x35, 0x33, 0x34, 0xB3, 0xAC, 0xD6, 0xD8
     };
-    ByteArray ch = {
-        sizeof(chStr) / sizeof(BYTE),
-        chStr
-    };
-    //区域长宽配置
-    BYTE areaCustomConfig[4] = {
-        0x28, 0x00, //宽度 单位8像素点 小端法 0x0028 = (2*16+8*1)*8 = 320
-        0xA0, 0x00, //高度 单位1像素点 小端法 0x00A0 = (10*16+0*1)*1 = 160
-    };
-    ByteArray displayCommand = display(ch, areaCustomConfig);
-    
-    //=== Send command through serial port ===
-    ret = sendCommand(port, clearScreen()); //清空屏幕
-    
-    //For test
-    if(ret >= 0) {
-        printf("ClearScreen success, data length: %d\n", ret);
-    } else {
-        printf("ClearScreen error: %d\n", ret);
-    }
-    
-    ret = sendCommand(port, displayCommand);
+    ret = dynamicDisplay(port, chStr, 12);
     
     if(ret >= 0) {
         printf("SendCommand success, data length: %d\n", ret);
@@ -106,6 +90,25 @@ int main(int argc, const char * argv[]) {
         printf("SendCommand error: %d\n", ret);
     }
     
+    //=== RefCount Test ===
+    int i;
+    for (i = 0; i < 10000; i++) {
+        dynamicDisplay(port, chStr, 12);
+        clearDisplay(port);
+    }
+    printf("\n\t=============\n\t RefCount: %d\n\t=============\n", getRefCount());
+    //### Test End ###
+    
+    //=== 清屏 ===
+//    ret = clearDisplay(port);
+//
+//    if(ret >= 0) {
+//        printf("ClearScreen success, data length: %d\n", ret);
+//    } else {
+//        printf("ClearScreen error: %d\n", ret);
+//    }
+    
+    //=== 结束使用 ===
     close(port);
     
     return 0;

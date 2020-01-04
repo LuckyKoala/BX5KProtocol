@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include "BX4K.h"
+#include "ReferenceCount.h"
 
 #define CRC(crc,byte) (((crc) >> 8 ) ^ tabel[((crc) ^ (unsigned int) (byte)) & 0XFF])
 static const unsigned short tabel[256] = {
@@ -108,8 +108,7 @@ ByteArray escape(ByteArray arr) {
     }
     //Escape and realloc
     int newLen = arr.len + escapeLen;
-    //TODO remember to free these memory allocated by hand !!
-    BYTE *data = (BYTE *) malloc(sizeof(BYTE) * newLen);
+    BYTE *data = (BYTE *) rc_malloc(sizeof(BYTE) * newLen);
     int index = 0; //Indicate where to put next byte
     for (i = 0; i < arr.len; i++) {
         switch (arr.data[i]) {
@@ -165,7 +164,7 @@ ByteArray unescape(ByteArray arr) {
   }
   //Escape and realloc
   int newLen = arr.len - unescapeLen;
-  BYTE *data = (BYTE *) malloc(sizeof(BYTE) * newLen);
+  BYTE *data = (BYTE *) rc_malloc(sizeof(BYTE) * newLen);
   int index = 0; //Indicate where to put next byte
   for (i = 0; i < arr.len; i++) {
       switch (arr.data[i]) {
@@ -219,9 +218,10 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
       PROTOCOL_DEFAULT, //协议版本号 默认 0x02
       littleEndian(packageDataLen) //数据长度
     };
+    
     //合并包头和数据域，直接使用struct会因为packing产生多余的0
     int packageForCRCLen =LEN_PACKAGE_FOR_CRC_MIN+dataLength;
-    BYTE *packageForCRCData = malloc(sizeof(BYTE) * packageForCRCLen);
+    BYTE *packageForCRCData = rc_malloc(sizeof(BYTE) * packageForCRCLen);
     memcpy(packageForCRCData, (BYTE *) &header, sizeof(BYTE) * LEN_PACKAGE_HEADER);
     memcpy(packageForCRCData + LEN_PACKAGE_HEADER,
            (BYTE *) &packageData, sizeof(BYTE) * LEN_PACKAGE_DATA_MIN);
@@ -232,15 +232,18 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
     unsigned short crc = littleEndian(calcCRC(packageForCRC));
     //合并PHY1层数据
     int newLen = LEN_PACKAGE_HEADER + packageDataLen + LEN_CRC;
-    BYTE *phy1 = realloc(packageForCRCData, (sizeof(BYTE) * newLen));
+    BYTE *phy1 = rc_realloc(packageForCRCData, (sizeof(BYTE) * newLen));
     memcpy(phy1 + packageForCRCLen, (BYTE *) &crc, sizeof(BYTE) * 2);
     ByteArray arr = { newLen, phy1 };
+    
     //转义PHY1层数据
     ByteArray escapedArr = escape(arr);
-    free((void *)arr.data);
+    rc_free((void *)arr.data);
+    arr.data = NULL;
+    
     //增加帧头和帧尾
     int frameLen = newLen + LEN_FRAME_START + LEN_FRAME_END;
-    BYTE *phy0 = malloc(sizeof(BYTE) * frameLen);
+    BYTE *phy0 = rc_malloc(sizeof(BYTE) * frameLen);
     unsigned int frameStartHalf = FRAME_START_HALF;
     unsigned short frameEnd = FRAME_END;
     memcpy(phy0, &frameStartHalf, sizeof(unsigned int)); //半个包头 4个A5
@@ -249,25 +252,26 @@ ByteArray genFrame(BX4KPackageData packageData, int dataLength) {
     memcpy(phy0 + frameStartSize, escapedArr.data,
            sizeof(BYTE) * escapedArr.len);
     memcpy(phy0 + frameStartSize + (sizeof(BYTE) * escapedArr.len), &frameEnd, sizeof(unsigned short));
-    free((void *) escapedArr.data);
+    rc_free((void *) escapedArr.data);
+    escapedArr.data = NULL;
     ByteArray frame = { frameLen, phy0 };
 
     return frame;
 }
 
-ByteArray wrapText(ByteArray arr, BX5KFontConfig fontConfig) {
-    char fontConfigStr[LEN_FONT_CONFIG];
-    sprintf(fontConfigStr, "\\F%c%c%c%c",
-            fontConfig.language, fontConfig.encoding,
-            fontConfig.fontFamily, fontConfig.fontSize);
-    
-    BYTE *data = malloc((arr.len + LEN_FONT_CONFIG) * sizeof(BYTE));
-    memcpy(data, fontConfigStr, LEN_FONT_CONFIG - 1);
-    memcpy(data + LEN_FONT_CONFIG - 1, arr.data, arr.len * sizeof(BYTE));
-    
-    ByteArray newArr = { arr.len + LEN_FONT_CONFIG - 1, data };
-    return newArr;
-}
+//ByteArray wrapText(ByteArray arr, BX5KFontConfig fontConfig) {
+//    char fontConfigStr[LEN_FONT_CONFIG];
+//    sprintf(fontConfigStr, "\\F%c%c%c%c",
+//            fontConfig.language, fontConfig.encoding,
+//            fontConfig.fontFamily, fontConfig.fontSize);
+//    
+//    BYTE *data = rc_malloc((arr.len + LEN_FONT_CONFIG) * sizeof(BYTE));
+//    memcpy(data, fontConfigStr, LEN_FONT_CONFIG - 1);
+//    memcpy(data + LEN_FONT_CONFIG - 1, arr.data, arr.len * sizeof(BYTE));
+//    
+//    ByteArray newArr = { arr.len + LEN_FONT_CONFIG - 1, data };
+//    return newArr;
+//}
 
 /*
  Example:
@@ -387,7 +391,7 @@ ByteArray display(ByteArray arr, BYTE areaCustomConfig[4]) {
         //0x00000000
     };
     
-    BYTE *realtimeDataField = malloc(newDataLen * sizeof(BYTE));
+    BYTE *realtimeDataField = rc_malloc(newDataLen * sizeof(BYTE));
     realtimeDataField[0] = 0x00; //删除区域个数 0
     realtimeDataField[1] = 0x01; //更新区域个数 1
     unsigned short areaDataLen = littleEndian(newDataLen - LEN_REALTIME_AREA_CONFIG_LEN);
@@ -408,7 +412,8 @@ ByteArray display(ByteArray arr, BYTE areaCustomConfig[4]) {
         realtimeDataField
     };
     ByteArray ret = genFrame(packageData, newDataLen);
-    free(realtimeDataField);
+    rc_free(realtimeDataField);
+    realtimeDataField = NULL;
     
     return ret;
 }
